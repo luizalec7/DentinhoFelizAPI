@@ -1,0 +1,6 @@
+@DentinhoFeliz.API_HostAddress = http://localhost:5043
+
+GET {{DentinhoFeliz.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
