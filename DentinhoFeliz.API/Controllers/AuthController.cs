@@ -1,55 +1,59 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
 using DentinhoFeliz.Domain.Entities;
 using DentinhoFeliz.Infrastructure;
+using System.Threading.Tasks;
 
 namespace DentinhoFeliz.API.Controllers
 {
-	[ApiController]
-	[Route("api/[controller]")]
-	public class AuthController : ControllerBase
-	{
-		private readonly DentinhoFelizContext _context;
-		private readonly IConfiguration _configuration;
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
+    {
+        private readonly DentinhoFelizContext _context;
 
-		public AuthController(DentinhoFelizContext context, IConfiguration configuration)
-		{
-			_context = context;
-			_configuration = configuration;
-		}
+        public AuthController(DentinhoFelizContext context)
+        {
+            _context = context;
+        }
 
-		[HttpPost("register")]
-		public IActionResult Register([FromBody] Usuario usuario)
-		{
-			if (_context.Usuarios.Any(u => u.Email == usuario.Email))
-				return BadRequest("E-mail já cadastrado.");
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] Usuario usuario)
+        {
+            if (usuario == null || !ModelState.IsValid)
+                return BadRequest(new { message = "Dados inválidos." });
 
-			_context.Usuarios.Add(usuario);
-			_context.SaveChanges();
-			return Ok("Usuário registrado com sucesso!");
-		}
+            if (await _context.Usuarios.AnyAsync(u => u.Email == usuario.Email))
+                return BadRequest(new { message = "E-mail já cadastrado." });
 
-		[HttpPost("login")]
-		public IActionResult Login([FromBody] Usuario usuario)
-		{
-			var user = _context.Usuarios.FirstOrDefault(u => u.Email == usuario.Email && u.Senha == usuario.Senha);
-			if (user == null)
-				return Unauthorized("E-mail ou senha incorretos.");
+            // Criptografa a senha antes de salvar no banco
+            usuario.Senha = BCrypt.Net.BCrypt.HashPassword(usuario.Senha);
 
-			var tokenHandler = new JwtSecurityTokenHandler();
-			var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
-			var tokenDescriptor = new SecurityTokenDescriptor
-			{
-				Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, user.Email) }),
-				Expires = DateTime.UtcNow.AddHours(2),
-				SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-			};
-			var token = tokenHandler.CreateToken(tokenDescriptor);
+            await _context.Usuarios.AddAsync(usuario);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Usuário registrado com sucesso!" });
+        }
 
-			return Ok(new { token = tokenHandler.WriteToken(token) });
-		}
-	}
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] Usuario usuario)
+        {
+            if (usuario == null || string.IsNullOrEmpty(usuario.Email) || string.IsNullOrEmpty(usuario.Senha))
+                return BadRequest(new { message = "E-mail e senha são obrigatórios." });
+
+            var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == usuario.Email);
+
+            if (user == null || !BCrypt.Net.BCrypt.Verify(usuario.Senha, user.Senha))
+                return Unauthorized(new { message = "E-mail ou senha incorretos." });
+
+            // Retorna apenas os dados do usuário autenticado
+            return Ok(new
+            {
+                user.Id,
+                user.Nome,
+                user.Email,
+                message = "Login bem-sucedido!"
+            });
+        }
+    }
 }

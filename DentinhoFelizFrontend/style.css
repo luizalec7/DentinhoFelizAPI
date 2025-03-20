@@ -1,0 +1,82 @@
+/* Estilos gerais */
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
+}
+
+/* Container centralizado */
+.container {
+    width: 90%;
+    max-width: 350px;
+    margin: 50px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease-in-out;
+}
+
+    .container:hover {
+        transform: scale(1.02);
+    }
+
+/* Logo */
+.logo {
+    width: 100px;
+    margin-bottom: 10px;
+}
+
+/* Estilos dos campos de entrada e botões */
+input, button {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+    input:focus {
+        border-color: red;
+        outline: none;
+        box-shadow: 0px 0px 5px rgba(255, 0, 0, 0.5);
+    }
+
+/* Botão principal */
+button {
+    background-color: red;
+    color: white;
+    cursor: pointer;
+    border: none;
+    font-weight: bold;
+    transition: background 0.3s, transform 0.2s;
+}
+
+    button:hover {
+        background-color: darkred;
+        transform: scale(1.05);
+    }
+
+/* Melhorando a lista de opções */
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+    ul li {
+        margin: 10px 0;
+        background: #eee;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+/* Melhorando responsividade */
+@media screen and (max-width: 400px) {
+    .container {
+        width: 95%;
+    }
+}

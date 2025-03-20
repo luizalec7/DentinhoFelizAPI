@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using DentinhoFeliz.Domain.Entities;
 using DentinhoFeliz.Infrastructure;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace DentinhoFeliz.API.Controllers
 {
@@ -16,55 +19,61 @@ namespace DentinhoFeliz.API.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetDuvidas()
+        public async Task<IActionResult> GetDuvidas()
         {
-            return Ok(_context.Duvidas.ToList());
+            var duvidas = await _context.Duvidas.ToListAsync();
+            return Ok(duvidas);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetDuvidaById(int id)
+        public async Task<IActionResult> GetDuvidaById(int id)
         {
-            var duvida = _context.Duvidas.Find(id);
+            var duvida = await _context.Duvidas.FindAsync(id);
             if (duvida == null)
-                return NotFound();
+                return NotFound(new { message = "Dúvida não encontrada." });
+
             return Ok(duvida);
         }
 
         [HttpPost]
-        public IActionResult CriarDuvida([FromBody] Duvida duvida)
+        public async Task<IActionResult> CriarDuvida([FromBody] Duvida duvida)
         {
-            if (duvida == null)
-                return BadRequest();
+            if (duvida == null || !ModelState.IsValid)
+                return BadRequest(new { message = "Dados inválidos." });
 
-            _context.Duvidas.Add(duvida);
-            _context.SaveChanges();
+            await _context.Duvidas.AddAsync(duvida);
+            await _context.SaveChangesAsync();
+
             return CreatedAtAction(nameof(GetDuvidaById), new { id = duvida.Id }, duvida);
         }
 
         [HttpPut("{id}")]
-        public IActionResult AtualizarDuvida(int id, [FromBody] Duvida duvida)
+        public async Task<IActionResult> AtualizarDuvida(int id, [FromBody] Duvida duvida)
         {
-            var duvidaExistente = _context.Duvidas.Find(id);
+            if (duvida == null || id != duvida.Id)
+                return BadRequest(new { message = "IDs não correspondem ou dados inválidos." });
+
+            var duvidaExistente = await _context.Duvidas.FindAsync(id);
             if (duvidaExistente == null)
-                return NotFound();
+                return NotFound(new { message = "Dúvida não encontrada." });
 
             duvidaExistente.Pergunta = duvida.Pergunta;
             duvidaExistente.Resposta = duvida.Resposta;
 
-            _context.SaveChanges();
-            return NoContent();
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Dúvida atualizada com sucesso!" });
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeletarDuvida(int id)
+        public async Task<IActionResult> DeletarDuvida(int id)
         {
-            var duvida = _context.Duvidas.Find(id);
+            var duvida = await _context.Duvidas.FindAsync(id);
             if (duvida == null)
-                return NotFound();
+                return NotFound(new { message = "Dúvida não encontrada." });
 
             _context.Duvidas.Remove(duvida);
-            _context.SaveChanges();
-            return NoContent();
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Dúvida deletada com sucesso!" });
         }
     }
 }

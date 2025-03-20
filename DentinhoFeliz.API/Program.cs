@@ -1,18 +1,19 @@
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using DentinhoFeliz.Infrastructure;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configura��o do banco de dados Oracle
+// 🔹 Configuração do banco de dados Oracle (Apontando para `dentinhofelizdbdotnet`)
 builder.Services.AddDbContext<DentinhoFelizContext>(options =>
-    options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseOracle("User Id=seu_usuario;Password=sua_senha;Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=oracle.fiap.com.br)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=dentinhofelizdbdotnet)))"));
 
-// Adicionando servi�os necess�rios
+// 🔹 Adicionando serviços necessários
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -21,7 +22,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Dentinho Feliz API",
         Version = "v1",
-        Description = "API para gerenciamento de usu�rios, quizzes, alarmes e d�vidas no aplicativo Dentinho Feliz",
+        Description = "API para gerenciamento de usuários, quizzes, alarmes e dúvidas no aplicativo Dentinho Feliz",
         Contact = new OpenApiContact
         {
             Name = "Suporte Dentinho Feliz",
@@ -33,6 +34,23 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// 🔹 Criar as tabelas automaticamente no Oracle (Migrations Automáticas)
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<DentinhoFelizContext>();
+
+    try
+    {
+        context.Database.Migrate(); // Aplica todas as migrações pendentes
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Erro ao aplicar migrações: {ex.Message}");
+    }
+}
+
+// 🔹 Configuração do Swagger para testes de API
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -40,7 +58,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthorization();
+app.UseAuthorization(); // 🔥 Removido `UseAuthentication()`, pois não há autenticação JWT
 app.MapControllers();
 
 app.Run();

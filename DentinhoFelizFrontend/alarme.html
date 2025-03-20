@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alarme - Dentinho Feliz</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body onload="carregarAlarmes()">
+    <div class="container">
+        <h2>Defina seu Alarme</h2>
+        <input type="time" id="alarme">
+        <button onclick="definirAlarme()">Definir Alarme</button>
+
+        <h3>Alarmes Ativos</h3>
+        <ul id="listaAlarmes">
+            <li>Nenhum alarme definido</li>
+        </ul>
+
+        <button onclick="window.location.href='menu.html'">Voltar</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

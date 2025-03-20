@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using DentinhoFeliz.Domain.Entities;
 using DentinhoFeliz.Infrastructure;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace DentinhoFeliz.API.Controllers
 {
@@ -16,56 +19,62 @@ namespace DentinhoFeliz.API.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetQuizzes()
+        public async Task<IActionResult> GetQuizzes()
         {
-            return Ok(_context.Quizzes.ToList());
+            var quizzes = await _context.Quizzes.ToListAsync();
+            return Ok(quizzes);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetQuizById(int id)
+        public async Task<IActionResult> GetQuizById(int id)
         {
-            var quiz = _context.Quizzes.Find(id);
+            var quiz = await _context.Quizzes.FindAsync(id);
             if (quiz == null)
-                return NotFound();
+                return NotFound(new { message = "Quiz não encontrado." });
+
             return Ok(quiz);
         }
 
         [HttpPost]
-        public IActionResult CriarQuiz([FromBody] Quiz quiz)
+        public async Task<IActionResult> CriarQuiz([FromBody] Quiz quiz)
         {
-            if (quiz == null)
-                return BadRequest();
+            if (quiz == null || !ModelState.IsValid)
+                return BadRequest(new { message = "Dados inválidos." });
 
-            _context.Quizzes.Add(quiz);
-            _context.SaveChanges();
+            await _context.Quizzes.AddAsync(quiz);
+            await _context.SaveChangesAsync();
+
             return CreatedAtAction(nameof(GetQuizById), new { id = quiz.Id }, quiz);
         }
 
         [HttpPut("{id}")]
-        public IActionResult AtualizarQuiz(int id, [FromBody] Quiz quiz)
+        public async Task<IActionResult> AtualizarQuiz(int id, [FromBody] Quiz quiz)
         {
-            var quizExistente = _context.Quizzes.Find(id);
+            if (quiz == null || id != quiz.Id)
+                return BadRequest(new { message = "IDs não correspondem ou dados inválidos." });
+
+            var quizExistente = await _context.Quizzes.FindAsync(id);
             if (quizExistente == null)
-                return NotFound();
+                return NotFound(new { message = "Quiz não encontrado." });
 
             quizExistente.Pergunta = quiz.Pergunta;
             quizExistente.Resposta = quiz.Resposta;
             quizExistente.Opcoes = quiz.Opcoes;
 
-            _context.SaveChanges();
-            return NoContent();
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Quiz atualizado com sucesso!" });
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeletarQuiz(int id)
+        public async Task<IActionResult> DeletarQuiz(int id)
         {
-            var quiz = _context.Quizzes.Find(id);
+            var quiz = await _context.Quizzes.FindAsync(id);
             if (quiz == null)
-                return NotFound();
+                return NotFound(new { message = "Quiz não encontrado." });
 
             _context.Quizzes.Remove(quiz);
-            _context.SaveChanges();
-            return NoContent();
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Quiz deletado com sucesso!" });
         }
     }
 }
